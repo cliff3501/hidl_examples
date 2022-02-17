@@ -1,0 +1,9 @@
+	<hal format="hidl">
+		<name>my_demo.hardware.led</name>
+		<transport>hwbinder</transport>
+		<version>1.0</version>
+		<interface>
+			<name>ILed</name>
+			<instance>default</instance>
+		</interface>
+	</hal>

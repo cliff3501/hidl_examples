@@ -1,0 +1,2 @@
+#TTI Cliff 20220217 added for HIDL test
+type  hal_led_hwservice, hwservice_manager_type;

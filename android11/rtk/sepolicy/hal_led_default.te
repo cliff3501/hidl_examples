@@ -1,0 +1,11 @@
+type hal_led_default, domain;
+type hal_led_default_exec, exec_type, vendor_file_type, file_type;
+
+add_hwservice(hal_led_default, hal_led_hwservice)
+init_daemon_domain(hal_led_default)
+hwbinder_use(hal_led_default);
+
+allow hal_led_default hal_led_hwservice:hwservice_manager find;
+allow hal_led_default sysfs_gpio:file { read write open };
+allow hal_led_default sysfs:file rw_file_perms;
+allow hal_led_default hwservicemanager_prop:file { read open getattr map };

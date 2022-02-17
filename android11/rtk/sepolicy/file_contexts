@@ -1,0 +1,2 @@
+#TTI Cliff 20220215 added for HIDL test
+/vendor/bin/hw/my_demo\.hardware\.led@1\.0-service	u:object_r:hal_led_default_exec:s0

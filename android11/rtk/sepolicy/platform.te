@@ -1,0 +1,3 @@
+#TTI Cliff 20220217 added for HIDL test
+allow platform_app hal_led_hwservice:hwservice_manager { find };
+allow platform_app hal_led_default:binder { call };
