@@ -1,0 +1,110 @@
+新增 HIDL 做了哪些修改.
+
+1. 將 my_demo 目錄放到 build_scripts/android 底下
+
+2. device/realtek/hank/device.mk
+新增以下內容
+#TTI Cliff 20220215 added for HIDL test
+PRODUCT_PACKAGES += \
+	my_demo.hardware.led@1.0-service \
+	my_demo.hardware.led@1.0.so \
+讓編譯的時候去編譯 my_demo
+
+3. 修改 device/realtek/hank/common/device_framework_matrix.xml 加上以下內容
+<hal format="hidl">
+		<name>my_demo.hardware.led</name>
+		<transport>hwbinder</transport>
+		<version>1.0</version>
+		<interface>
+			<name>ILed</name>
+			<instance>default</instance>
+		</interface>
+	</hal>
+4. 將 LedCtrlTestApp 這包放到 vendor/tti/products/preload 底下
+5. 修改 vendor/tti/products/build/tti_base.mk
+   將 LedCtrlTestApp 這包加進去編譯
+
+6. 新增 device/realtek/hank/common/sepolicy/hal_led_default.te 內容如下
+type hal_led_default, domain;
+type hal_led_default_exec, exec_type, vendor_file_type, file_type;
+
+add_hwservice(hal_led_default, hal_led_hwservice)
+init_daemon_domain(hal_led_default)
+hwbinder_use(hal_led_default);
+
+allow hal_led_default hal_led_hwservice:hwservice_manager find;
+allow hal_led_default sysfs_gpio:file { read write open };
+allow hal_led_default sysfs:file rw_file_perms;
+allow hal_led_default hwservicemanager_prop:file { read open getattr map };
+
+7. 在 device/realtek/hank/common/file_contexts 裡面新增內容
+#TTI Cliff 20220215 added for HIDL test
+/vendor/bin/hw/my_demo\.hardware\.led@1\.0-service	u:object_r:hal_led_default_exec:s0
+
+8. 在 device/realtek/hank/common/hwservice.te 裡面新增內容
+#TTI Cliff 20220217 added for HIDL test
+type  hal_led_hwservice, hwservice_manager_type;
+
+9. 在 device/realtek/hank/common/hwservice_contexts 裡面新增內容
+#TTI Cliff 20220217 added for HIDL test
+my_demo.hardware.led::ILed						 u:object_r:hal_led_hwservice:s0
+
+10. 在 device/realtek/hank/common/platform_app.te 裡面新增內容
+#TTI Cliff 20220217 added for HIDL test
+allow platform_app hal_led_hwservice:hwservice_manager { find };
+allow platform_app hal_led_default:binder { call };
+   
+
+新增 HIDL 時遭遇到的問題. (RTK 平台)
+1.
+Added VNDK-core: my_demo.hardware.led@1.0.so
+ error: VNDK library list has been changed.
+        Changing the VNDK library list is not allowed in API locked branches.
+
+解決辦法: 
+將 my_demo/interfaces/led/1.0/defaults/Android.bp
+裡面的 
+
+vndk 改成 false 就可以避掉這個問題.
+
+2. 
+checkvintf E 02-16 14:55:17   132   132 check_vintf.cpp:554] files are incompatible: Framework manifest and device compatibility matrix are incompatible: HALs incompatible. The following requirements are not met:
+checkvintf E 02-16 14:55:17   132   132 check_vintf.cpp:554] my_demo.hardware.led:
+checkvintf E 02-16 14:55:17   132   132 check_vintf.cpp:554]     required: @1.0::ILed/default
+checkvintf E 02-16 14:55:17   132   132 check_vintf.cpp:554]     provided:
+checkvintf E 02-16 14:55:17   132   132 check_vintf.cpp:554] : Success
+INCOMPATIBLE
+
+解決辦法:
+在 my_demo/interfaces/led/1.0/defaults/Android.bp 裡面新增
+vintf_fragments: ["my_demo.hardware.led@1.0-service.xml"],
+然後在 my_demo/interface/led/1.0/defaults 底下新增一個檔案 my_demo.hardware.led@1.0-service.xml 檔案內容為
+<manifest version="1.0" type="device">
+    <hal format="hidl">
+		<name>my_demo.hardware.led</name>
+		<transport>hwbinder</transport>
+		<version>1.0</version>
+		<interface>
+			<name>ILed</name>
+			<instance>default</instance>
+		</interface>
+	</hal>
+</manifest>
+再到 build_scripts/android/device/realtek/hank/common/device_framework_matrix.xml 裡面加上以下內容
+<hal format="hidl">
+		<name>my_demo.hardware.led</name>
+		<transport>hwbinder</transport>
+		<version>1.0</version>
+		<interface>
+			<name>ILed</name>
+			<instance>default</instance>
+		</interface>
+	</hal>
+就可以編過了
+
+3. 編譯的時候 一直編不出 my_demo.hardware.led@1.0-service 執行檔
+原因是 my_demo/interface/led/1.0/defaults 裡面的 Android.bp
+正確要寫成 cc_binary 但是我寫成 cc_library_shared 了.
+修正過來就可以了.
+
+
