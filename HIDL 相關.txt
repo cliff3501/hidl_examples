@@ -1,6 +1,11 @@
 新增 HIDL 做了哪些修改.
 
 1. 將 my_demo 目錄放到 build_scripts/android 底下
+   單獨編譯 mydemo 的步驟
+   cd build_scripts/android
+   source env.sh
+   lunch RealtekHank
+   mm mydemo
 
 2. device/realtek/hank/device.mk
 新增以下內容
